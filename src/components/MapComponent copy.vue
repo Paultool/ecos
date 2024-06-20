@@ -1,7 +1,7 @@
 <template>
   <div id="app">
     <header>
-      <h1>Mapa Interactivo Laguna de Zumpango</h1>
+      <h1>Ecos del Agua : Mapa Interactivo</h1>
     </header>
     <main>
       <div class="responsive-frame">
