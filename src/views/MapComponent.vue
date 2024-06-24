@@ -80,6 +80,7 @@ export default {
         content:'<iframe width="100%" height="315" src="https://www.youtube.com/embed/sclylFJAA-E" frameborder="0" allowfullscreen></iframe>',
         name: `Historia `+id,
         coordinates: coordinates
+      
       };
     }
 
@@ -111,6 +112,7 @@ export default {
 
       if (!overlap) {
         this.polygons.push(newPolygon);
+        
       }
 
       attempts++;
@@ -122,12 +124,15 @@ export default {
     this.map.on('load', () => {
       this.polygons.forEach((polygon, index) => {
         const polygonId = `${polygon.name} ${index + 1}`;
-
+  console.log("coordenadas poligono "+polygon.name+ " " + polygon.coordinates) ;
         const polygonFeature = {
+          
+            
           type: 'Feature',
           geometry: {
             type: 'Polygon',
             coordinates: [polygon.coordinates]
+
           },
           properties: {
             name: polygonId,
