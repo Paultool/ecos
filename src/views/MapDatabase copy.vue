@@ -2,71 +2,48 @@
   <div id="app">
     <header>
       <h1>Ecos del Agua : Mapa Interactivo</h1>
-      <div id="polygon-dropdown">
-        <select v-model="selectedPolygonId" @change="showPolygonContentByDropdown">
-          <option v-for="(polygon, index) in polygons" :key="index" :value="`${polygon.nombre} ${index + 1}`">
-            {{ polygon.nombre }}
-          </option>
-        </select>
-      </div>
     </header>
     <main>
-      <div id="map" ref="mapContainer"></div>
-      <!-- The Modal -->
-      <div id="myModal2" class="modal">
-
-        <!-- Modal content -->
-        <div class="modal-content">
-          <div class="modal-header">
-            <span class="close" @click="closeModal">&times;</span>
-            <h2>{{ selectedPolygon.nombre }}</h2>
+      <div class="responsive-frame">
+        <div id="left-column">
+          <div id="map" ref="mapContainer"></div>
+        </div>
+        <div id="right-column">
+          <div id="polygon-menu">
+            <ul>
+              <li v-for="(polygon, index) in polygons" :key="index" @click="showPolygonContent(polygon, index)">
+                {{ polygon.nombre }}
+              </li>
+            </ul>
           </div>
-          <div class="modal-body">
+          <div id="polygon-content">
+            <h2>{{ selectedPolygon.nombre }}</h2>
             <div v-html="selectedPolygon.descripcion"></div>
           </div>
-          <div class="modal-footer">
-            <p>{{ selectedPolygon.coordenadas }}</p>
-          </div>
         </div>
-
       </div>
     </main>
   </div>
-
-
-
 </template>
+
 <script>
 import axios from 'axios';
 import mapboxgl from 'mapbox-gl';
-
-
 
 export default {
   data() {
     return {
       polygons: [],
       selectedPolygon: {
-        nombre: '',
-        descripcion: ''
+        name: '',
+        content: ''
       },
       hoveredPolygonId: null,
       selectedPolygonId: null,
-      map: null,
-      modalVisible: false
+      map: null
     };
   },
   mounted() {
-
-    var modal = document.getElementById("myModal2");
-
-    // When the user clicks anywhere outside of the modal, close it
-    window.onclick = function(event) {
-      if (event.target == modal) {
-        modal.style.display = "none";
-      }
-    }
-
     mapboxgl.accessToken = 'pk.eyJ1IjoicGF1bHRvb2wiLCJhIjoiY2tpbTNveHY5MHB1ODJ4bmFzeG5idzVwNyJ9.Hp_t8btogzDqOMFyOKjWyA';
 
     this.map = new mapboxgl.Map({
@@ -82,7 +59,7 @@ export default {
     });
 
     this.map.on('load', () => {
-      this.fetchPolygons();
+      this.fetchPolygons(); // Mover la llamada a fetchPolygons dentro del evento 'load'
     });
   },
   methods: {
@@ -91,6 +68,7 @@ export default {
         const response = await axios.get('https://ecosbackend-production.up.railway.app/api/poligonos');
         this.polygons = response.data;
 
+        // Agrega los polígonos al mapa
         this.polygons.forEach((polygon, index) => {
           const polygonId = `${polygon.nombre} ${index + 1}`;
           const coordinates = JSON.parse(polygon.coordenadas).map(coord => [coord.lng, coord.lat]);
@@ -99,7 +77,7 @@ export default {
             type: 'Feature',
             geometry: {
               type: 'Polygon',
-              coordinates: [coordinates]
+              coordinates: [coordinates] // Coordenadas en formato adecuado para Mapbox
             },
             properties: {
               name: polygonId,
@@ -129,6 +107,7 @@ export default {
             }
           });
 
+          // Cambiar el color del polígono al pasar el mouse por encima
           this.map.on('mouseenter', polygonId, () => {
             this.hoveredPolygonId = polygonId;
             this.updatePolygonOpacity();
@@ -139,6 +118,7 @@ export default {
             this.updatePolygonOpacity();
           });
 
+          // Mostrar contenido del polígono al hacer clic en él
           this.map.on('click', polygonId, () => {
             this.showPolygonContent(polygon, index);
           });
@@ -148,24 +128,10 @@ export default {
       }
     },
     showPolygonContent(polygon, index) {
-      var modal = document.getElementById("myModal2");
       this.selectedPolygon = polygon;
       this.selectedPolygonId = `${polygon.nombre} ${index + 1}`;
       this.hoveredPolygonId = null;
       this.updatePolygonOpacity();
-      modal.style.display = "block";
-    },
-    showPolygonContentByDropdown() {
-      const selected = this.polygons.find((polygon, index) => `${polygon.nombre} ${index + 1}` === this.selectedPolygonId);
-      if (selected) {
-        const index = this.polygons.indexOf(selected);
-        this.showPolygonContent(selected, index);
-      }
-    },
-    closeModal() {
-      var modal = document.getElementById("myModal2");
-      this.modalVisible = false;
-      modal.style.display = "none";
     },
     updatePolygonOpacity() {
       if (this.map && this.map.getStyle() && this.map.getStyle().layers) {
@@ -193,13 +159,6 @@ header {
   color: white;
   text-align: center;
   padding: 10px;
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-}
-
-#polygon-dropdown {
-  margin-right: 20px;
 }
 
 main {
@@ -208,79 +167,51 @@ main {
   overflow: hidden;
 }
 
+.responsive-frame {
+  display: flex;
+  flex: 1;
+  flex-direction: row;
+  max-width: 100%;
+  max-height: 100%;
+  overflow: hidden;
+}
+
+#left-column, #right-column {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  overflow: hidden;
+}
+
 #map {
   width: 100%;
   height: 100%;
 }
 
-
-/* Modal Header */
-.modal-header {
-  padding: 2px 16px;
-  background-color: #5cb85c;
-  color: white;
+#polygon-menu {
+  height: 25%;
+  overflow-y: auto;
+  background-color: #f0f0f0;
+  padding: 10px;
 }
 
-/* Modal Body */
-.modal-body {padding: 2px 16px;}
-
-/* Modal Footer */
-.modal-footer {
-  padding: 2px 16px;
-  background-color: #5cb85c;
-  color: Black;
-}
-
-/* Modal /* The Modal (background) */
-.modal {
-  display: none; /* Hidden by default */
-  position: fixed; /* Stay in place */
-  z-index: 1; /* Sit on top */
-  padding-top: 100px; /* Location of the box */
-  left: 0;
-  top: 0;
-  width: 100%; /* Full width */
-  height: 100%; /* Full height */
-  overflow: auto; /* Enable scroll if needed */
-  background-color: rgb(0,0,0); /* Fallback color */
-  background-color: rgba(0,0,0,0.4); /* Black w/ opacity */
-}
-
-/* Modal Content */
-.modal-content {
-  position: relative;
-  background-color: #fefefe;
-  margin: auto;
+#polygon-menu ul {
+  list-style-type: none;
   padding: 0;
-  border: 1px solid #888;
-  width: 80%;
-  box-shadow: 0 4px 8px 0 rgba(0,0,0,0.2),0 6px 20px 0 rgba(0,0,0,0.19);
-  -webkit-animation-name: animatetop;
-  -webkit-animation-duration: 0.4s;
-  animation-name: animatetop;
-  animation-duration: 0.4s
 }
 
-/* Add Animation */
-@-webkit-keyframes animatetop {
-  from {top:-300px; opacity:0} 
-  to {top:0; opacity:1}
-}
-
-/* The Close Button */
-.close {
-  color: white;
-  float: right;
-  font-size: 28px;
-  font-weight: bold;
-}
-
-.close:hover,
-.close:focus {
-  color: #000;
-  text-decoration: none;
+#polygon-menu li {
   cursor: pointer;
+  padding: 5px;
+  border-bottom: 1px solid #ccc;
 }
 
+#polygon-menu li:hover {
+  background-color: #ddd;
+}
 
+#polygon-content {
+  height: 25%;
+  padding: 20px;
+}
 </style>
